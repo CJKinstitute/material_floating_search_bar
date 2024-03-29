@@ -140,6 +140,10 @@ class FloatingSearchAppBar extends ImplicitlyAnimatedWidget {
   /// {@macro floating_search_bar.toolbarOptions}
   final ToolbarOptions? toolbarOptions;
 
+  final void Function()? backAction;
+
+  final Widget backActionIcon;
+
   final ValueChanged<KeyEvent>? onKeyEvent;
   const FloatingSearchAppBar({
     Key? key,
@@ -148,6 +152,8 @@ class FloatingSearchAppBar extends ImplicitlyAnimatedWidget {
     required this.body,
     this.accentColor,
     this.color,
+    this.backAction,
+    this.backActionIcon = const Icon(Icons.arrow_back_ios),
     this.colorOnScroll,
     this.shadowColor,
     this.iconColor,
@@ -531,20 +537,34 @@ class FloatingSearchAppBarState extends ImplicitlyAnimatedWidgetState<
 
     return Row(
       children: [
+        SizedBox(
+          width: 32,
+          child: ClipRect(
+            child: IconButton(
+              onPressed: () =>
+                  widget.backAction != null ? widget.backAction!() : null,
+              icon: widget.backActionIcon,
+            ),
+          ),
+        ),
+        const Opacity(opacity: .7, child: Icon(Icons.search)),
         FloatingSearchActionBar(
           animation: transitionAnimation,
           actions: leadingActions,
           iconTheme: iconTheme,
         ),
         Expanded(
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: AlignmentDirectional.centerStart,
-            children: <Widget>[
-              _buildInputField(),
-              buildGradient(isLeft: true),
-              buildGradient(isLeft: false),
-            ],
+          child: Transform.translate(
+            offset: const Offset(0, 0),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: AlignmentDirectional.centerStart,
+              children: <Widget>[
+                _buildInputField(),
+                buildGradient(isLeft: true),
+                buildGradient(isLeft: false),
+              ],
+            ),
           ),
         ),
         FloatingSearchActionBar(

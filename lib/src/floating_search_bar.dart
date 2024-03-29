@@ -24,6 +24,11 @@ typedef FloatingSearchBarBuilder = Widget Function(
 /// transitions similar to the ones used extensively
 /// by Google in their apps.
 class FloatingSearchBar extends ImplicitlyAnimatedWidget {
+  /// The initial query of the `FloatingSearchBar`.
+  ///
+  /// This can be used to pre-fill the input field with a query.
+  final String initialQuery;
+
   /// The widget displayed below the `FloatingSearchBar`.
   ///
   /// This is useful, if the `FloatingSearchBar` should react
@@ -341,6 +346,10 @@ class FloatingSearchBar extends ImplicitlyAnimatedWidget {
   /// Allow processing any keypress into the input text.
   final ValueChanged<KeyEvent>? onKeyEvent;
 
+  final void Function()? backAction;
+
+  final Widget backActionIcon;
+
   /// The [EdgeInsets] of the [SingleChildScrollView] holding the expandable body of
   /// this `FloatingSearchBar`.
   final EdgeInsets scrollPadding;
@@ -348,8 +357,11 @@ class FloatingSearchBar extends ImplicitlyAnimatedWidget {
     Key? key,
     Duration implicitDuration = const Duration(milliseconds: 600),
     Curve implicitCurve = Curves.linear,
+    this.initialQuery = '',
     this.body,
     this.accentColor,
+    this.backAction,
+    this.backActionIcon = const SizedBox.shrink(),
     this.backgroundColor,
     this.shadowColor = Colors.black87,
     this.iconColor,
@@ -456,8 +468,13 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
 
   bool get isOpen => barState?.isOpen ?? false;
   set isOpen(bool value) {
-    if (value != isOpen) barState?.isOpen = value;
-    value ? _controller.forward() : _controller.reverse();
+    if (barState?.isOpen != value) barState?.isOpen = value;
+
+    value
+        ? _controller.forward()
+        : widget.closeOnBackdropTap
+            ? _controller.reverse()
+            : null;
   }
 
   bool get isVisible => _translateController.isDismissed;
@@ -523,16 +540,26 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
     _assignController();
   }
 
-  void _assignController() => widget.controller?._searchBarState = this;
+  void _assignController() {
+    widget.controller?._searchBarState = this;
+    isOpen = !widget.clearQueryOnClose;
+    if (!widget.clearQueryOnClose) {
+      postFrame(() {
+        widget.controller?.query = widget.initialQuery;
+        postFrame(() =>
+            (widget.onQueryChanged ?? (_) => null).call(widget.initialQuery));
+      });
+    }
+  }
 
   void show() => isVisible = true;
-  void hide() => isVisible = false;
+  void hide() => widget.closeOnBackdropTap ? isVisible = false : null;
 
   void open() => isOpen = true;
-  void close() => isOpen = false;
+  void close() => widget.closeOnBackdropTap ? isOpen = false : null;
 
   Future<bool> _onPop() async {
-    if (isOpen) {
+    if (isOpen && widget.closeOnBackdropTap) {
       close();
       return false;
     }
@@ -601,7 +628,7 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
     body = widget.builder(context, animation);
 
     final searchBar = SizedBox.expand(
-      child: isAvailableSwipeBack
+      child: widget.closeOnBackdropTap
           ? _getSearchBarWidget()
           : WillPopScope(
               onWillPop: _onPop,
@@ -641,7 +668,8 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
             clipBehavior: Clip.none,
             children: <Widget>[
               _buildBackdrop(),
-              _buildSearchBar(),
+              Transform.translate(
+                  offset: const Offset(0.0, -12), child: _buildSearchBar()),
             ],
           ),
         ),
@@ -651,7 +679,9 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
 
   Widget _buildSearchBar() {
     final padding = _resolve(transition.lerpPadding());
-    final borderRadius = transition.lerpBorderRadius();
+    final borderRadius = transition
+        .lerpBorderRadius()
+        .add(const BorderRadius.all(Radius.circular(24)));
 
     final container = Semantics(
       hidden: !isVisible,
@@ -681,7 +711,7 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
           ),
           builder: (context, child) => Material(
             elevation: transition.lerpElevation() *
-                (1.0 - interval(0.95, 1.0, _translateAnimation.value)),
+                (0.3 - interval(0.95, 1.0, _translateAnimation.value)),
             shadowColor: style.shadowColor,
             borderRadius: borderRadius,
             child: child,
@@ -689,7 +719,6 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
         ),
       ),
     );
-
     final bar = SlideTransition(
       position: Tween(
         begin: Offset.zero,
@@ -716,13 +745,17 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
 
   Widget _buildInnerBar() {
     final textField = FloatingSearchAppBar(
+      backAction: widget.backAction,
+      backActionIcon: widget.backActionIcon,
       showCursor: widget.showCursor,
       body: null,
       key: barKey,
       height: 1000,
       elevation: 0.0,
       controller: widget.controller,
-      color: transition.lerpBackgroundColor(),
+      color: HSLColor.fromColor(transition.lerpBackgroundColor())
+          .withLightness(0.9)
+          .toColor(),
       onFocusChanged: (isFocused) {
         isOpen = isFocused;
         widget.onFocusChanged?.call(isFocused);
@@ -825,7 +858,9 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
   }
 
   Widget _buildBackdrop() {
-    if (v == 0.0) return const SizedBox(height: 0);
+    if (widget.closeOnBackdropTap) {
+      if (v == 0.0) return const SizedBox(height: 0);
+    }
 
     return FadeTransition(
       opacity: animation,
