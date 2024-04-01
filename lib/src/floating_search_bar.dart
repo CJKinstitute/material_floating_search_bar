@@ -678,10 +678,16 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
   }
 
   Widget _buildSearchBar() {
+    final outsideActions = (widget.actions ?? [])
+        .where((e) => e is FloatingSearchBarAction && e.outside)
+        .toList();
     final padding = _resolve(transition.lerpPadding());
     final borderRadius = transition
         .lerpBorderRadius()
         .add(const BorderRadius.all(Radius.circular(24)));
+    final hslbgc = HSLColor.fromColor(
+        widget.backgroundColor ?? Theme.of(context).cardColor);
+    final reverseLightness = 1 - hslbgc.lightness;
 
     final container = Semantics(
       hidden: !isVisible,
@@ -691,18 +697,67 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
         padding: transition.lerpMargin(),
         child: AnimatedBuilder(
           child: Container(
-            width: transition.lerpWidth(),
-            height: transition.lerpHeight(),
-            padding: EdgeInsets.only(top: padding.top, bottom: padding.bottom),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: transition.lerpBackgroundColor(),
+              borderRadius: borderRadius,
               border: Border.fromBorderSide(style.border),
-              borderRadius: borderRadius,
             ),
-            child: ClipRRect(
-              borderRadius: borderRadius,
-              child: _buildInnerBar(),
+            child: Row(
+              children: [
+                IconButton(
+                    color: HSLColor.fromColor(transition.lerpBackgroundColor())
+                        .withLightness(reverseLightness)
+                        .toColor(),
+                    onPressed: widget.backAction,
+                    icon: widget.backActionIcon),
+                Transform.translate(
+                  offset: const Offset(12, 0),
+                  child: Opacity(
+                    opacity: 0.7,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      // circular container with gray backgronud
+                      decoration: const BoxDecoration(
+                        // color:
+                        //     HSLColor.fromColor(transition.lerpBackgroundColor())
+                        //         .withLightness(0.9)
+                        //         .toColor(),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.search,
+                        color:
+                            HSLColor.fromColor(transition.lerpBackgroundColor())
+                                .withLightness(reverseLightness)
+                                .toColor(),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Transform.translate(
+                    offset: const Offset(8, 0),
+                    child: Container(
+                      width: transition.lerpWidth(),
+                      height: transition.lerpHeight(),
+                      padding: EdgeInsets.only(
+                          top: padding.top, bottom: padding.bottom),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: transition.lerpBackgroundColor(),
+                        border: Border.fromBorderSide(style.border),
+                        borderRadius: borderRadius,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: borderRadius,
+                        child: _buildInnerBar(),
+                      ),
+                    ),
+                  ),
+                ),
+                ...outsideActions,
+              ],
             ),
           ),
           animation: CurvedAnimation(
@@ -710,8 +765,7 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
             curve: const Interval(0.95, 1.0),
           ),
           builder: (context, child) => Material(
-            elevation: transition.lerpElevation() *
-                (0.3 - interval(0.95, 1.0, _translateAnimation.value)),
+            elevation: 0,
             shadowColor: style.shadowColor,
             borderRadius: borderRadius,
             child: child,
@@ -745,8 +799,6 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
 
   Widget _buildInnerBar() {
     final textField = FloatingSearchAppBar(
-      backAction: widget.backAction,
-      backActionIcon: widget.backActionIcon,
       showCursor: widget.showCursor,
       body: null,
       key: barKey,

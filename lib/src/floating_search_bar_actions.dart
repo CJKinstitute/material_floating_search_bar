@@ -36,6 +36,8 @@ class FloatingSearchBarAction extends StatelessWidget {
   /// bar [FloatingSearchBar] closed.
   final bool showIfClosed;
 
+  final bool outside;
+
   /// Creates a widget to be displayed in a row before or after the
   /// input text of a [FloatingSearchBar].
   ///
@@ -44,6 +46,7 @@ class FloatingSearchBarAction extends StatelessWidget {
     Key? key,
     this.child,
     this.builder,
+    this.outside = false,
     this.showIfOpened = false,
     this.showIfClosed = true,
   })  : assert(builder != null || child != null),
