@@ -626,6 +626,17 @@ class FloatingSearchAppBarState extends ImplicitlyAnimatedWidgetState<
               disabledBorder: InputBorder.none,
               focusedErrorBorder: InputBorder.none,
             ),
+            contextMenuBuilder: (context, editableTextState) {
+              // Use SystemContextMenu if supported, otherwise fall back to flutter-rendered context menu
+              if (SystemContextMenu.isSupported(context)) {
+                return SystemContextMenu.editableText(
+                  editableTextState: editableTextState,
+                );
+              }
+              return AdaptiveTextSelectionToolbar.editableText(
+                editableTextState: editableTextState,
+              );
+            },
           ),
         ),
       );
@@ -638,7 +649,7 @@ class FloatingSearchAppBarState extends ImplicitlyAnimatedWidgetState<
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).appBarTheme.toolbarTextStyle ??
-                Theme.of(context).textTheme.headline6 ??
+                Theme.of(context).textTheme.headlineSmall ??
                 const TextStyle(),
             child: input,
           );
@@ -648,9 +659,9 @@ class FloatingSearchAppBarState extends ImplicitlyAnimatedWidgetState<
         final textTheme = theme.textTheme;
 
         final textStyle = hasQuery
-            ? style.queryStyle ?? textTheme.subtitle1
+            ? style.queryStyle ?? textTheme.labelMedium
             : style.hintStyle ??
-                textTheme.subtitle1?.copyWith(color: theme.hintColor);
+                textTheme.labelMedium?.copyWith(color: theme.hintColor);
 
         input = Text(
           hasQuery ? query : widget.hint ?? '',

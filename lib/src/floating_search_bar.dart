@@ -166,6 +166,13 @@ class FloatingSearchBar extends ImplicitlyAnimatedWidget {
   /// {@endtemplate}
   final bool automaticallyImplyBackButton;
 
+  /// {@template floating_search_bar.automaticallyImplySearchButton}
+  /// Whether to automatically display a search button.
+  ///
+  /// When not specified, defaults to `true`.
+  /// {@endtemplate}
+  final bool automaticallyImplySearchButton;
+
   /// Whether the `FloatingSearchBar` should be closed when
   /// the backdrop was tapped.
   ///
@@ -382,6 +389,7 @@ class FloatingSearchBar extends ImplicitlyAnimatedWidget {
     this.clearQueryOnClose = true,
     this.automaticallyImplyDrawerHamburger = true,
     this.automaticallyImplyBackButton = true,
+    this.automaticallyImplySearchButton = true,
     this.closeOnBackdropTap = true,
     this.progress = false,
     this.transitionDuration = const Duration(milliseconds: 500),
@@ -704,40 +712,45 @@ class FloatingSearchBarState extends ImplicitlyAnimatedWidgetState<
             ),
             child: Row(
               children: [
-                IconButton(
-                    color: HSLColor.fromColor(transition.lerpBackgroundColor())
-                        .withLightness(reverseLightness)
-                        .toColor(),
-                    onPressed: widget.backAction,
-                    icon: widget.backActionIcon),
-                Transform.translate(
-                  offset: const Offset(12, 0),
-                  child: Opacity(
-                    opacity: 0.7,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      // circular container with gray backgronud
-                      decoration: const BoxDecoration(
-                        // color:
-                        //     HSLColor.fromColor(transition.lerpBackgroundColor())
-                        //         .withLightness(0.9)
-                        //         .toColor(),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.search,
+                !widget.automaticallyImplySearchButton
+                    ? const SizedBox()
+                    : IconButton(
                         color:
                             HSLColor.fromColor(transition.lerpBackgroundColor())
                                 .withLightness(reverseLightness)
                                 .toColor(),
+                        onPressed: widget.backAction,
+                        icon: widget.backActionIcon),
+                !widget.automaticallyImplySearchButton
+                    ? const SizedBox()
+                    : Transform.translate(
+                        offset: const Offset(12, 0),
+                        child: Opacity(
+                          opacity: 0.7,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            // circular container with gray backgronud
+                            decoration: const BoxDecoration(
+                              // color:
+                              //     HSLColor.fromColor(transition.lerpBackgroundColor())
+                              //         .withLightness(0.9)
+                              //         .toColor(),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.search,
+                              color: HSLColor.fromColor(
+                                      transition.lerpBackgroundColor())
+                                  .withLightness(reverseLightness)
+                                  .toColor(),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
                 Expanded(
                   child: Transform.translate(
-                    offset: const Offset(8, 0),
+                    offset: const Offset(0, 0),
                     child: Container(
                       width: transition.lerpWidth(),
                       height: transition.lerpHeight(),
