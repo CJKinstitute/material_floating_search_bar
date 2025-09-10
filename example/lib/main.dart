@@ -219,12 +219,12 @@ class _HomeState extends State<Home> {
                     children: [
                       Text(
                         place.name,
-                        style: textTheme.subtitle1,
+                        style: textTheme.labelMedium,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         place.level2Address,
-                        style: textTheme.bodyText2
+                        style: textTheme.bodyMedium
                             ?.copyWith(color: Colors.grey.shade600),
                       ),
                     ],
